@@ -11,7 +11,7 @@ with open('cedict_ts.u8') as f:
         if line[0] != '#':
             line = line.rstrip()
 
-            headwords = re.split('\s',line)
+            headwords = re.split(r'\s',line)
             if headwords:
                 data[id] = dict()
                 data[id]['simplified'] = headwords[1]
@@ -19,18 +19,20 @@ with open('cedict_ts.u8') as f:
             else:
                 raise Exception("No headwords found in line {}".format(i_line))
 
-            pinyin = re.search(r"\[(.*)\]" ,line).group(1)
+            pinyin = re.search(r'\[(.*)\]' ,line).group(1)
             if pinyin:
                 data[id]['pinyin'] = pinyin
             else:
-                raise Exception("No Pinyin for {} in line {}".format(simplified, i_line))
+                raise Exception("No Pinyin in line {}".format(i_line))
 
-            definition = re.split('\/',line)
+            definition = re.split(r'\/',line)
             if definition:
                 data[id]['definition'] = definition[1:-1]
             else:
-                raise Exception("No definition for {} in line {}".format(simplified, i_line))
+                raise Exception("No definition in line {}".format(i_line))
             
             id += 1
+
+
 
 print("Found {} entries".format(id-1))
