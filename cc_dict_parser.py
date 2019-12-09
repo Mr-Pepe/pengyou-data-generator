@@ -20,7 +20,7 @@ with open('cedict_ts.u8') as f:
             else:
                 raise Exception("No headwords found in line {}".format(i_line))
 
-            pinyin = re.search(r'\[(.*)\]' ,line).group(1).replace(' ', '')
+            pinyin = re.search(r'\[([^\]]*)\]' ,line).group(1).replace(' ', '')
             if pinyin:
                 data[id]['pinyin_tones'] = pinyin
                 data[id]['pinyin_pure'] = re.sub('\d', '', pinyin)
@@ -63,7 +63,7 @@ try:
                            ('ID', 'Traditional', 'Simplified', 'Pinyin_Tones', 'Pinyin_Pure')
                            VALUES (?, ?, ?, ?, ?);"""
         
-        entries_query_data = (id, data[id]['simplified'], data[id]['traditional'], data[id]['pinyin_tones'], data[id]['pinyin_pure'])
+        entries_query_data = (id, data[id]['traditional'], data[id]['simplified'], data[id]['pinyin_tones'], data[id]['pinyin_pure'])
 
         count = c.execute(entries_query, entries_query_data)
 
