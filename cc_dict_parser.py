@@ -22,30 +22,18 @@ def create_dictionary_database(textfile_path, database_path):
             c = conn.cursor()
 
             if not update_db:
-                c.execute('''CREATE TABLE headword (
+                c.execute('''CREATE TABLE word (
                             id INTEGER PRIMARY KEY AUTOINCREMENT, 
                             simplified TEXT NOT NULL,
                             traditional TEXT NOT NULL,
+                            pinyin TEXT NOT NULL,
                             priority INTEGER NOT NULL)''')
-
-                c.execute('''CREATE TABLE pinyin (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            pinyin TEXT NOT NULL)''')
-                
-                # Pinyin with tones gets mapped to headwords in many-to-many relationship
-                c.execute('''CREATE TABLE headword_pinyin (
-                            id INTEGER PRIMARY KEY,
-                            headword_id INTEGER NOT NULL,
-                            pinyin_id TEXT NOT NULL)''')
 
                 # Definitions have to be mapped to a headword and a specific pinyin
                 c.execute('''CREATE TABLE definition (
                             id INTEGER PRIMARY KEY,
-                            headword_id INTEGER NOT NULL, 
-                            pinyin_id INTEGER NOT NULL,
+                            word_id INTEGER NOT NULL, 
                             definition TEXT NOT NULL)''')
-
-            old_simplified_headword = ''
 
             for i_line, line in enumerate(f):
                 # Check for comment line
@@ -62,84 +50,41 @@ def create_dictionary_database(textfile_path, database_path):
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
                     if not definitions: raise Exception("No definitions in line {}".format(i_line+1))
 
-                    # Check if headword exists to have every headword only ones in the database
-                    headword_id = None
-                    if headwords[1] == old_simplified_headword or update_db:
-                        headword_id = c.execute("""SELECT 
+                    # Check if entry exists already
+                    word_id = None
+                    if update_db:
+                        word_id = c.execute("""SELECT 
                                                     id 
                                                    FROM 
-                                                    headword
+                                                    word
                                                    WHERE 
-                                                    simplified=?""", 
-                                                (headwords[1],)).fetchall()
-                        if headword_id:
-                            headword_id = headword_id[0][0]
+                                                    simplified = ?
+                                                   AND
+                                                    pinyin = ?""", 
+                                                (headwords[1], pinyin)).fetchall()
+                        if word_id:
+                            word_id = word_id[0][0]
                     
-                    if not headword_id:
-                        c.execute("""INSERT INTO headword ('simplified', 'traditional', 'priority') 
-                                        VALUES (?,?, ?)""",
-                                    (headwords[1], headwords[0], 0))
+                    if not word_id:
+                        c.execute("""INSERT INTO word (simplified, traditional, pinyin, priority) 
+                                     VALUES (?, ?, ?, ?)""",
+                                    (headwords[1], headwords[0], pinyin, 0))
 
-                        headword_id = c.lastrowid
-
-                    # Check if pinyin exists
-                    pinyin_id = c.execute("""SELECT 
-                                              id 
-                                             FROM 
-                                              pinyin 
-                                             WHERE 
-                                              pinyin=?""", 
-                                             (pinyin,)).fetchall()
-
-
-                    if pinyin_id:
-                        pinyin_existed = True
-                        pinyin_id = pinyin_id[0][0]
-                    else:
-                        pinyin_existed = False
-                        c.execute("""INSERT INTO pinyin ('pinyin') 
-                                     VALUES (?)""", 
-                                     (pinyin,))
-
-                        pinyin_id = c.lastrowid
-
-                    # Connect Pinyin and headword
-                    headword_pinyin_existed = False
-                    if update_db and pinyin_existed: 
-                        if c.execute("""SELECT 
-                                        id
-                                    FROM 
-                                        headword_pinyin
-                                    WHERE
-                                        headword_id = ?
-                                    AND
-                                        pinyin_id = ?""",
-                                    (headword_id, pinyin_id)):
-
-                            headword_pinyin_existed = True 
-                        
-                    if not headword_pinyin_existed:    
-                        c.execute("""INSERT INTO headword_pinyin ('headword_id', 'pinyin_id') 
-                                    VALUES (?,?)""", 
-                                    (headword_id, pinyin_id))
+                        word_id = c.lastrowid 
                     
                     if update_db:
                         # Delete existing definitions
                         c.execute("""DELETE FROM 
-                                    definition
+                                     definition
                                     WHERE
-                                    headword_id = ? 
-                                    AND
-                                    pinyin_id = ?""",
-                                    (headword_id, pinyin_id))
+                                     word_id = ?""",
+                                    (word_id,))
 
                     # Save Definitions
                     for definition in definitions[1:-1]:
-                        c.execute("""INSERT INTO definition ('headword_id', 'pinyin_id', 'definition') 
-                                     VALUES (?,?,?)""",
-                                     (headword_id, pinyin_id, definition))
-
-                    old_simplified_headword = headwords[1]
+                        c.execute("""INSERT INTO definition (word_id, definition) 
+                                     VALUES (?, ?)""",
+                                     (word_id, definition))
 
             conn.commit()
             conn.close()
@@ -152,6 +97,9 @@ def create_dictionary_database(textfile_path, database_path):
                 print("The SQLite connection is closed")
 
 def create_search_index(database_path):
+
+    # TODO: Pinyin with and without tones
+    # TODO: Mix of Pinyin and Hanzi
 
     try:
         conn = sqlite3.connect(database_path)
