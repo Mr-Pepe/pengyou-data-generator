@@ -106,46 +106,57 @@ def create_search_index(database_path):
         print("Successfully connected to database.")
 
         c = conn.cursor()
+        
+        c.execute("DROP TABLE IF EXISTS search_index")
 
-        # # Permutations of Pinyin with and without tones linked to pinyin with tones
-        # c.execute('''CREATE TABLE PERMUTATIONS
-        #             ([ID] INTEGER PRIMARY KEY,
-        #             [Permutation] text)''')
+        # Permutations linked to dictionary entry
+        c.execute('''CREATE TABLE search_index
+                    (id INTEGER PRIMARY KEY,
+                    word_id INTEGER NOT NULL,
+                    permutation TEXT NOT NULL)''')
 
-        # # Mapping between Pinyin with tones and permutations
-        # c.execute('''CREATE TABLE PINYIN_PERMUTATIONS
-        #             ([ID] INTEGER PRIMARY KEY,
-        #             [Pinyin_ID] integer,
-        #             [Permutation_ID] integer)''')
+        entries = c.execute("""SELECT 
+                                id, simplified, pinyin
+                             FROM
+                                word""").fetchall()
+        
+        for i, entry in enumerate(entries):
+            if (i%1000)==0:
+                print(i)
 
-        all_pinyin_entries = c.execute('SELECT * FROM PINYIN').fetchall()
+            entry_id = entry[0]
+            hanzi = entry[1]
+            syllables = re.split(r'\s', entry[2])
 
-        for entry in all_pinyin_entries:
-            pinyin_id = entry[0]
-            pinyin = entry[1]
+            max_len_permutations = 3
             
-            # Get headwords that have this pinyin
-            headwords = c.execute('SELECT Headword_ID FROM HEADW')
-
-            # Create all permutations of Pinyin with and without tones for the first for characters
-            # to be able to combine search with and without tones
-            syllables = re.split(r'\s', pinyin)
-
-            if len(syllables) <= 4:
-                permutations = create_permutations(syllables)
+            if len(syllables) <= max_len_permutations:
+                if len(hanzi) != len(syllables):
+                    permutations = create_permutations(['' for x in syllables], syllables)[1:]
+                    permutations.append(hanzi)
+                else:
+                    permutations = create_permutations(list(hanzi), syllables)
             else:
-                tmp_permutations = create_permutations(syllables[:4])
-                permutations = []
-                for permutation in tmp_permutations:
-                    permutations.append(permutation+re.sub('\d', '', ''.join(syllables[4:])))
+                if len(hanzi) != len(syllables):
+                    # tmp_permutations = create_permutations(['' for x in syllables[:max_len_permutations]], syllables[:max_len_permutations])[1:]
+
+                    permutations = [hanzi, re.sub(' ', '', ''.join(syllables))]
+
+                else:
+                    tmp_permutations = create_permutations(hanzi[:max_len_permutations], syllables[:max_len_permutations])
+                    permutations = []
+                    for permutation in tmp_permutations:
+                        permutations.append(permutation + re.sub('\d', '', ''.join(syllables[max_len_permutations:])))
+                        permutations.append(permutation + hanzi[max_len_permutations:])
+
 
             for permutation in permutations:
-                c.execute("INSERT INTO PERMUTATIONS ('Permutation') VALUES (?)", 
-                    (permutation,))
-                permutation_id = c.lastrowid
+                c.execute("""INSERT INTO search_index (word_id, permutation) 
+                             VALUES (?, ?)""", 
+                             (entry_id, permutation,))
 
-                c.execute("INSERT INTO PINYIN_PERMUTATIONS ('Pinyin_ID', 'Permutation_ID') VALUES (?,?)", 
-                    (pinyin_id, permutation_id))
+        conn.commit()
+        conn.close()
 
     except sqlite3.Error as error:
         print("Failed to insert data into sqlite table", error)
@@ -155,16 +166,26 @@ def create_search_index(database_path):
             print("The SQLite connection is closed")
 
 
-def create_permutations(syllables):
+def create_permutations(hanzi, syllables):
     if len(syllables) == 1:
-        if bool(re.search(r'\d', syllables[0])):
-            return [syllables[0], re.sub('\d', '', syllables[0])]
-        else: 
-            return syllables
+        syllable = syllables[0]
+
+        output = [hanzi[0], syllable]
+
+        if bool(re.search(r'\d', syllable)):
+            syllable_without_digits = re.sub('\d', '', syllable)
+            output.append(syllable_without_digits)
+
+        if syllable == 'r5':
+            output.append('er5')
+            output.append('er')
+        
+        
+        return list(set(output))
     else:
         split = int(len(syllables)/2)
-        first_half = create_permutations(syllables[:split])
-        second_half = create_permutations(syllables[split:])
+        first_half = create_permutations(hanzi[:split], syllables[:split])
+        second_half = create_permutations(hanzi[split:], syllables[split:])
 
         output = []
 
@@ -178,5 +199,5 @@ if __name__ == "__main__":
     textfile_path = 'cedict_ts.u8'
     database_path = 'cedict.db'
     
-    create_dictionary_database(textfile_path, database_path)
+    # create_dictionary_database(textfile_path, database_path)
     # create_search_index(database_path)
