@@ -27,7 +27,8 @@ def create_dictionary_database(textfile_path, database_path):
                             simplified TEXT NOT NULL,
                             traditional TEXT NOT NULL,
                             pinyin TEXT NOT NULL,
-                            priority INTEGER NOT NULL)''')
+                            priority INTEGER NOT NULL,
+                            word_length INTEGER NOT NULL)''')
 
                 # Definitions have to be mapped to a headword and a specific pinyin
                 c.execute('''CREATE TABLE definition (
@@ -66,9 +67,9 @@ def create_dictionary_database(textfile_path, database_path):
                             word_id = word_id[0][0]
                     
                     if not word_id:
-                        c.execute("""INSERT INTO word (simplified, traditional, pinyin, priority) 
-                                     VALUES (?, ?, ?, ?)""",
-                                    (headwords[1], headwords[0], pinyin, 0))
+                        c.execute("""INSERT INTO word (simplified, traditional, pinyin, priority, word_length) 
+                                     VALUES (?, ?, ?, ?, ?)""",
+                                    (headwords[1], headwords[0], pinyin, 0, len(headwords[0])))
 
                         word_id = c.lastrowid 
                     
@@ -121,7 +122,7 @@ def create_search_index(database_path):
                                 word""").fetchall()
         
         for i, entry in enumerate(entries):
-            if (i%1000)==0:
+            if (i%10000)==0:
                 print(i)
 
             entry_id = entry[0]
@@ -138,16 +139,17 @@ def create_search_index(database_path):
                     permutations = create_permutations(list(hanzi), syllables)
             else:
                 if len(hanzi) != len(syllables):
-                    # tmp_permutations = create_permutations(['' for x in syllables[:max_len_permutations]], syllables[:max_len_permutations])[1:]
-
-                    permutations = [hanzi, re.sub(' ', '', ''.join(syllables))]
-
+                    tmp_permutations = create_permutations(['' for x in syllables[:max_len_permutations]], syllables[:max_len_permutations])[1:]
                 else:
                     tmp_permutations = create_permutations(hanzi[:max_len_permutations], syllables[:max_len_permutations])
-                    permutations = []
-                    for permutation in tmp_permutations:
-                        permutations.append(permutation + re.sub('\d', '', ''.join(syllables[max_len_permutations:])))
-                        permutations.append(permutation + hanzi[max_len_permutations:])
+
+                permutations = []
+                for permutation in tmp_permutations:
+                    permutations.append(permutation + re.sub('\d', '', ''.join(syllables[max_len_permutations:])))
+                    permutations.append(permutation + hanzi[max_len_permutations:])
+                
+                if hanzi not in permutations:
+                    permutations.append(hanzi)
 
 
             for permutation in permutations:
@@ -199,5 +201,5 @@ if __name__ == "__main__":
     textfile_path = 'cedict_ts.u8'
     database_path = 'cedict.db'
     
-    # create_dictionary_database(textfile_path, database_path)
-    # create_search_index(database_path)
+    create_dictionary_database(textfile_path, database_path)
+    create_search_index(database_path)
