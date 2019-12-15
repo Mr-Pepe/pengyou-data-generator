@@ -27,23 +27,18 @@ def create_dictionary_database(textfile_path, database_path):
                             simplified TEXT NOT NULL,
                             traditional TEXT NOT NULL,
                             pinyin TEXT NOT NULL,
+                            definitions TEXT NOT NULL,
                             priority INTEGER NOT NULL,
                             word_length INTEGER NOT NULL)''')
-
-                # Definitions have to be mapped to a headword and a specific pinyin
-                c.execute('''CREATE TABLE definitions (
-                            id INTEGER PRIMARY KEY,
-                            entry_id INTEGER NOT NULL, 
-                            definition TEXT NOT NULL)''')
                 
                 # Permutations linked to dictionary entry
-                c.execute('''CREATE TABLE search_index (
+                c.execute('''CREATE TABLE permutations (
                             id INTEGER PRIMARY KEY,
                             entry_id INTEGER NOT NULL, 
                             permutation TEXT NOT NULL)''')
 
             else:
-                c.execute("DELETE FROM search_index")
+                c.execute("DELETE FROM permutations")
 
             n_lines = sum([1 for line in f if line[0] != '#'])
             f.seek(0)
@@ -58,7 +53,7 @@ def create_dictionary_database(textfile_path, database_path):
 
                     headwords = re.split(r'\s',line)
                     pinyin = re.search(r'\[([^\]]*)\]' ,line).group(1)
-                    definitions = re.split(r'\/',line)
+                    definitions = re.search(r'\/(.*)\/',line).group(1)
                     
                     if not headwords: raise Exception("No headwords found in line {}".format(i_line+1))
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
@@ -80,25 +75,11 @@ def create_dictionary_database(textfile_path, database_path):
                             entry_id = entry_id[0][0]
                     
                     if not entry_id:
-                        c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length) 
-                                     VALUES (?, ?, ?, ?, ?)""",
-                                    (headwords[1], headwords[0], pinyin, 0, len(headwords[0])))
+                        c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions) 
+                                     VALUES (?, ?, ?, ?, ?, ?)""",
+                                    (headwords[1], headwords[0], pinyin, 0, len(headwords[0]), definitions))
 
                         entry_id = c.lastrowid 
-                    
-                    if update_db:
-                        # Delete existing definitions
-                        c.execute("""DELETE FROM 
-                                     definitions
-                                    WHERE
-                                     entry_id = ?""",
-                                    (entry_id,))
-
-                    # Save Definitions
-                    for definition in definitions[1:-1]:
-                        c.execute("""INSERT INTO definitions (entry_id, definition) 
-                                     VALUES (?, ?)""",
-                                     (entry_id, definition))
 
                     # Generate search index
                     max_len_permutations = 3
@@ -127,7 +108,7 @@ def create_dictionary_database(textfile_path, database_path):
 
 
                     for permutation in permutations:
-                        c.execute("""INSERT INTO search_index (entry_id, permutation) 
+                        c.execute("""INSERT INTO permutations (entry_id, permutation) 
                                     VALUES (?, ?)""", 
                                     (entry_id, permutation))
 
