@@ -112,6 +112,8 @@ def create_dictionary_database(textfile_path, database_path):
                                     VALUES (?, ?)""", 
                                     (entry_id, permutation))
 
+            c.execute("CREATE INDEX search_index ON permutations (permutation)")
+
             conn.commit()
             conn.close()
 
