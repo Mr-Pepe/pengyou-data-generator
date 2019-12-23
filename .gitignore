@@ -1,6 +1,8 @@
 
 .vscode/
-
+cjklib/
 cedict_ts.u8
 
 cedict.db
+
+cjkdecomp/

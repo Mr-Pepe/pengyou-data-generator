@@ -118,7 +118,7 @@ def create_dictionary_database(textfile_path, database_path):
             conn.close()
 
         except sqlite3.Error as error:
-            print("Failed to insert data into sqlite table", error)
+            print("Failed to insert data into sqlite table:", error)
         finally:
             if (conn):
                 conn.close()
