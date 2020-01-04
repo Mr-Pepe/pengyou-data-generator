@@ -6,3 +6,7 @@ cedict_ts.u8
 cedict.db
 
 cjkdecomp/
+
+playground/
+
+src/__pycache__/
