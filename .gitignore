@@ -10,3 +10,5 @@ cjkdecomp/
 playground/
 
 src/__pycache__/
+
+output/
