@@ -8,11 +8,10 @@ def parse_decompositions(decomposition_file_path, database_path):
         raise Exception("Couldn't find {}!".format(decomposition_file_path))
 
     with open(decomposition_file_path) as f_decomposition:
-        print("Opened decomposition data text file.")
+        print("Parsing character decompositions.")
 
         try:
             conn = sqlite3.connect(database_path)
-            print("Successfully connected to database.")
 
             c = conn.cursor()
 
@@ -45,7 +44,6 @@ def parse_decompositions(decomposition_file_path, database_path):
         finally:
             if (conn):
                 conn.close()
-                print("The SQLite connection is closed.")
     
 
 if __name__ == "__main__":

@@ -15,7 +15,6 @@ def parse_stroke_order(textfile_path, database_path):
 
         try:
             conn = sqlite3.connect(database_path)
-            print("Successfully connected to database.")
 
             c = conn.cursor()
 
@@ -42,8 +41,6 @@ def parse_stroke_order(textfile_path, database_path):
         finally:
             if (conn):
                 conn.close()
-                print("The SQLite connection is closed.")
-
 
 
 if __name__ == "__main__":
