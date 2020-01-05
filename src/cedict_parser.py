@@ -46,11 +46,64 @@ def parse_dictionary(textfile_path, database_path):
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
                     if not definitions: raise Exception("No definitions in line {}".format(i_line+1))
 
+                    if len(definitions.split('/')) == 1 and "old variant of" in definitions:
+                        continue
+                        
+                    if len(definitions.split('/')) == 1 and "archaic variant of" in definitions:
+                        continue
+
                     c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?)""",
                                 (headwords[1], headwords[0], pinyin, 0, len(headwords[0]), definitions, 7))
 
             print("")
+
+            # Augment erhua version definitions
+            entries = c.execute("SELECT * FROM entries WHERE definitions LIKE '%erhua variant of%'").fetchall()
+
+            for entry in entries:
+                definitions = entry[4]
+                pinyin = entry[3]
+                if len(definitions.split('/')) == 1:
+
+                    # Get the entry this entry is derived from
+                    origin_headwords = definitions.split('erhua variant of ')[1].split('[')[0].split('|')
+
+                    if len(origin_headwords) == 1:
+                        origin = c.execute("SELECT * FROM entries WHERE simplified = (?) AND traditional = (?)", (origin_headwords[0], origin_headwords[0])).fetchall()
+
+                        if not origin:
+                            print("Error 1")
+                        elif len(origin) > 1:
+                            found = 0
+                            for tmpEntry in origin:
+                                if tmpEntry[3] in pinyin:
+                                    c.execute("UPDATE entries SET definitions = (?) WHERE id = (?) ", (tmpEntry[4] + '/' + definitions, entry[0]))
+                                    found += 1
+                            
+                            if found != 1:
+                                print("Error 2")
+                        else:
+                            c.execute("UPDATE entries SET definitions = (?) WHERE id = (?) ", (origin[0][4] + '/' + definitions, entry[0]))
+                    
+                    elif len(origin_headwords) == 2:
+                        origin = c.execute("SELECT * FROM entries WHERE traditional = (?) AND simplified = (?)", (origin_headwords[0], origin_headwords[1])).fetchall()
+
+                        if not origin:
+                            print("Error 3")
+                        elif len(origin) > 1:
+                            found = 0
+                            for tmpEntry in origin:
+                                if tmpEntry[3] in pinyin:
+                                    c.execute("UPDATE entries SET definitions = (?) WHERE id = (?) ", (tmpEntry[4] + '/' + definitions, entry[0]))
+                                    found += 1
+                            
+                            if found != 1:
+                                print("Error 4")
+                        else:
+                            c.execute("UPDATE entries SET definitions = (?) WHERE id = (?) ", (origin[0][4] + '/' + definitions, entry[0]))
+                    else:
+                        print("Error 5")
 
             conn.commit()
             conn.close()
