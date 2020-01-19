@@ -23,7 +23,7 @@ def parse_dictionary(textfile_path, database_path):
                         traditional TEXT NOT NULL,
                         pinyin TEXT NOT NULL,
                         definitions TEXT NOT NULL,
-                        priority INTEGER NOT NULL,
+                        priority FLOAT NOT NULL,
                         hsk INTEGER NOT NULL,
                         word_length INTEGER NOT NULL)''')
 

@@ -3,16 +3,20 @@ from cjdecomp_parser import parse_decompositions
 from stroke_order_parser import parse_stroke_order
 from permutations import generate_permutations
 from hsk_word_list_parser import parse_hsk
+from character_frequency_parser import parse_character_frequency
 
 cedict_raw_file_path = "./data/cedict.txt"
 cjdecomp_raw_file_path = "./data/cjdecomp.txt"
 stroke_order_raw_file_path = "./data/stroke_order.json"
 hsk_lists_base_path = "./data/HSK/HSK{}.txt"
+frequency_file_path = "./data/character_frequency.html"
 database_path = "./output/data.db"
 
 parse_dictionary(cedict_raw_file_path, database_path)
 
 parse_hsk(hsk_lists_base_path, database_path)
+
+parse_character_frequency(frequency_file_path, database_path)
 
 generate_permutations(database_path, max_len_permutations=3)
 
