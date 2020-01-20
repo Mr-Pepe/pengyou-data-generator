@@ -9,8 +9,10 @@ def generate_permutations(database_path, max_len_permutations):
 
         c = conn.cursor()
 
+        c.execute("DROP INDEX IF EXISTS search_index")
         c.execute("DROP TABLE IF EXISTS permutations")
-
+        c.execute("VACUUM")
+        
         # Permutations of Hanzi and Pinyin with and without tones for searching
         c.execute('''CREATE TABLE permutations (
                     id INTEGER PRIMARY KEY,

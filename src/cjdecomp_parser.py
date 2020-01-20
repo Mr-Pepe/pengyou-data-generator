@@ -16,6 +16,7 @@ def parse_decompositions(decomposition_file_path, database_path):
             c = conn.cursor()
 
             c.execute("DROP TABLE IF EXISTS decompositions")
+            c.execute("VACUUM")
 
             c.execute('''CREATE TABLE decompositions (
                         id INTEGER PRIMARY KEY,

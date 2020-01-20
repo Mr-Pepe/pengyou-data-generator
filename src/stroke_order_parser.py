@@ -19,6 +19,7 @@ def parse_stroke_order(textfile_path, database_path):
             c = conn.cursor()
 
             c.execute("DROP TABLE IF EXISTS stroke_orders")
+            c.execute("VACUUM")
 
             c.execute('''CREATE TABLE stroke_orders (
                         id INTEGER PRIMARY KEY,

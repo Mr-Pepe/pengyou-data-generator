@@ -16,6 +16,7 @@ def parse_dictionary(textfile_path, database_path):
             c = conn.cursor()
 
             c.execute("DROP TABLE IF EXISTS entries")
+            c.execute("VACUUM")
 
             c.execute('''CREATE TABLE entries (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, 
