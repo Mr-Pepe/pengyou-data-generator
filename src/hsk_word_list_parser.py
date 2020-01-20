@@ -47,9 +47,9 @@ def parse_hsk(base_path, database_path):
                         
                         modified_pinyin = modified_pinyin.replace('  ', ' ').strip()
                         
-                        c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                                (simplified, traditional, modified_pinyin, 0, len(simplified), definitions.replace('/', ' or ').replace('; ', '/').strip(), i_hsk))
+                        c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk, pinyin_length) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                (simplified, traditional, modified_pinyin, 0, len(simplified), definitions.replace('/', ' or ').replace('; ', '/').strip(), i_hsk, len(modified_pinyin)))
                     
                     else:
                         # Delete variant entries

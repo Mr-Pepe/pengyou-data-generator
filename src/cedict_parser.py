@@ -26,7 +26,8 @@ def parse_dictionary(textfile_path, database_path):
                         definitions TEXT NOT NULL,
                         priority FLOAT NOT NULL,
                         hsk INTEGER NOT NULL,
-                        word_length INTEGER NOT NULL)''')
+                        word_length INTEGER NOT NULL,
+                        pinyin_length INTEGER NOT NULL)''')
 
             n_lines = sum([1 for line in f if line[0] != '#'])
             f.seek(0)
@@ -53,9 +54,9 @@ def parse_dictionary(textfile_path, database_path):
                     if len(definitions.split('/')) == 1 and "archaic variant of" in definitions:
                         continue
 
-                    c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                                (headwords[1], headwords[0], pinyin, 0, len(headwords[0]), definitions, 7))
+                    c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk, pinyin_length) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                (headwords[1], headwords[0], pinyin, 0, len(headwords[0]), definitions, 7, len(pinyin)))
 
             print("")
 
