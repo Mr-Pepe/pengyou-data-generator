@@ -106,9 +106,16 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
                     if str(hex(ord(character)))[-4:].upper() in unihan:
                         print("Adding {} from Unihan".format(character))
                         entry = unihan[str(hex(ord(character)))[-4:].upper()]
+                        pinyin = entry['pinyin'].strip()
+
+                        if ' ' in pinyin:
+                            raise Exception("Pinyin from Unihan has more than one pinyin syllable")
+                        else:
+                            pinyin = pinyin_marks_to_numbers(pinyin)
+
                         c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk, pinyin_length) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                                (character, character, entry['pinyin'], 0, 1, entry['definition'], 7, len(entry['pinyin'])))
+                                (character, character, pinyin, 0, 1, entry['definition'], 7, len(pinyin)))
                     else:
                         chars_not_found.append(character)
             
@@ -172,6 +179,49 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
             if (conn):
                 conn.close()
 
+def pinyin_marks_to_numbers(syllable):
+
+    tone = 5
+    output = []
+
+    characters = ['a', 'e', 'i', 'o', 'u', 'ü', 
+                  'A', 'E', 'I', 'O', 'U', 'Ü']
+
+    marks = [('ā', 'á', 'ǎ', 'à', 'a'),
+            ('ē', 'é', 'ě', 'è', 'e'),
+            ('ī', 'í', 'ǐ', 'ì', 'i'),
+            ('ō', 'ó', 'ǒ', 'ò', 'o'),
+            ('ū', 'ú', 'ǔ', 'ù', 'u'),
+            ('ǖ', 'ǘ', 'ǚ', 'ǜ', 'ü'),
+
+            ('Ā', 'Á', 'Ǎ', 'À', 'A'),
+            ('Ē', 'É', 'Ě', 'È', 'E'),
+            ('Ī', 'Í', 'Ĭ', 'Ì', 'I'),
+            ('Ō', 'Ó', 'Ǒ', 'Ò', 'O'),
+            ('Ū', 'Ú', 'Ǔ', 'Ù', 'U'),
+            ('Ǖ', 'Ǘ', 'Ǚ', 'Ǜ', 'Ü')]
+
+    for character in syllable: 
+        indices = [-1 for mark in marks]
+
+        for i_mark, mark in enumerate(marks):
+            if character in mark:
+                indices[i_mark] = mark.index(character)
+
+        if sum(indices) != -len(indices):
+            for i_index, index in enumerate(indices):
+                if index != -1:
+                    output.append(characters[i_index])
+                    tone = index+1
+        else:
+            output.append(character)
+
+    output.append(str(tone))
+    output = ''.join(output).strip()
+
+    print("Converted {} to {}".format(syllable, output))
+
+    return output
 
 if __name__ == "__main__":
     cedict_raw_file_path = "./data/cedict.txt"
