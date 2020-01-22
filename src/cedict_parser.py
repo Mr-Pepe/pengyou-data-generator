@@ -2,12 +2,37 @@ import re
 import sqlite3
 import os
 
-def parse_dictionary(textfile_path, database_path):    
+def parse_dictionary(cedict_path, unihan_path, database_path):    
 
-    if not os.path.isfile(textfile_path):
-        raise Exception("Couldn't find {}!".format(textfile_path))
+    entries = []
+    characters = set()
+
+    if not os.path.isfile(cedict_path):
+        raise Exception("Couldn't find {}!".format(cedict_path))
+
+    if not os.path.isfile(unihan_path):
+        raise Exception("Couldn't find {}!".format(unihan_path))
+
+    unihan = dict()
+    print("Parsing Unihan.")
+    with open(unihan_path) as f_unihan:
+        for i_line, line in enumerate(f_unihan):
+            # Check for comment line
+            if line != '\n' and line[0] != '#':
+                u_code, id, content = line.split("\t")
+                u_code = u_code[2:]
+
+                if u_code not in unihan:
+                    unihan[u_code] = {'pinyin': '', 'definition': ''}
+
+                if id == 'kMandarin':
+                    unihan[u_code]['pinyin'] = content
+                if id == 'kDefinition':
+                    unihan[u_code]['definition'] = content.strip().replace(', ', '/').replace('; ', '/')
     
-    with open(textfile_path) as f:
+    print("Found {} entries in Unihan.".format(len(unihan)))
+
+    with open(cedict_path) as f_cedict:
         print("Parsing CEDICT.")
 
         try:
@@ -29,10 +54,10 @@ def parse_dictionary(textfile_path, database_path):
                         word_length INTEGER NOT NULL,
                         pinyin_length INTEGER NOT NULL)''')
 
-            n_lines = sum([1 for line in f if line[0] != '#'])
-            f.seek(0)
+            n_lines = sum([1 for line in f_cedict if line[0] != '#'])
+            f_cedict.seek(0)
 
-            for i_line, line in enumerate(f):
+            for i_line, line in enumerate(f_cedict):
                 # Check for comment line
                 if line[0] != '#':
                     if ((i_line+1) % 1000) == 0:
@@ -48,6 +73,15 @@ def parse_dictionary(textfile_path, database_path):
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
                     if not definitions: raise Exception("No definitions in line {}".format(i_line+1))
 
+                    entries.append(headwords[0])
+                    entries.append(headwords[1])
+
+                    for character in headwords[0]:
+                        characters.add(character)
+
+                    for character in headwords[1]:
+                        characters.add(character)
+
                     if len(definitions.split('/')) == 1 and "old variant of" in definitions:
                         continue
                         
@@ -59,6 +93,26 @@ def parse_dictionary(textfile_path, database_path):
                                 (headwords[1], headwords[0], pinyin, 0, len(headwords[0]), definitions, 7, len(pinyin)))
 
             print("")
+
+            print("Checking that every character has a definition.")
+            chars_not_found = []
+
+            # Make sure that there is a definition for every character 
+            # Add Unihan definition if necessary
+            for character in characters:
+                
+                # Checking here is faster than doing a lookup in the database
+                if character not in entries:
+                    if str(hex(ord(character)))[-4:].upper() in unihan:
+                        print("Adding {} from Unihan".format(character))
+                        entry = unihan[str(hex(ord(character)))[-4:].upper()]
+                        c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk, pinyin_length) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                                (character, character, entry['pinyin'], 0, 1, entry['definition'], 7, len(entry['pinyin'])))
+                    else:
+                        chars_not_found.append(character)
+            
+            print("The following characters have no definition in CEDICT or Unihan: {}".format(", ".join(chars_not_found)))
 
             # Augment erhua version definitions
             entries = c.execute("SELECT * FROM entries WHERE definitions LIKE '%erhua variant of%'").fetchall()
@@ -122,5 +176,6 @@ def parse_dictionary(textfile_path, database_path):
 if __name__ == "__main__":
     cedict_raw_file_path = "./data/cedict.txt"
     database_path = "./output/data.db"
+    unihan_path = "./data/unihan.txt"
     
-    parse_dictionary(cedict_raw_file_path, database_path)
+    parse_dictionary(cedict_raw_file_path, unihan_path, database_path)
