@@ -27,7 +27,7 @@ def generate_permutations(database_path, max_len_permutations):
             
             entry_id = entry[0]
             hanzi = entry[1]
-            syllables = re.split(r'\s', entry[3])
+            syllables = re.split(r'\s', entry[3].lower())
 
             if len(syllables) <= max_len_permutations:
                 if len(hanzi) != len(syllables):
