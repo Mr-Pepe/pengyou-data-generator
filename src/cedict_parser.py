@@ -67,7 +67,7 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
 
                     headwords = re.split(r'\s',line)
                     pinyin = re.search(r'\[([^\]]*)\]' ,line).group(1)
-                    definitions = re.search(r'\/(.*)\/',line).group(1)
+                    definitions = re.search(r'\/(.*)\/',line).group(1).replace("CL:", "measure word:")
                     
                     if not headwords: raise Exception("No headwords found in line {}".format(i_line+1))
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
