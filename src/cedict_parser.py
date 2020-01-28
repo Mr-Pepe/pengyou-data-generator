@@ -67,7 +67,34 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
 
                     headwords = re.split(r'\s',line)
                     pinyin = re.search(r'\[([^\]]*)\]' ,line).group(1)
-                    definitions = re.search(r'\/(.*)\/',line).group(1).replace("CL:", "measure word:")
+                    raw_definitions = re.search(r'\/(.*)\/',line).group(1).replace("CL:", "measure word: ")
+
+                    # Wrap Chinese words in § for linking, because that is not used otherwise
+                    # That saves the pain of handling surrogate pairs during definition parsing in Kotlin
+                    definitions = ""
+                    mode = 0 # Mode: 0 = not entered Chinese string, 1 = entered Chinese string
+                    for i_char in range(len(raw_definitions)):
+                        
+                        if mode == 0:
+                            if ((raw_definitions[i_char] >= u'\u4e00' and raw_definitions[i_char] <= u'\u9fff') or 
+                                (raw_definitions[i_char] >= u'\u3000' and raw_definitions[i_char] <= u'\u303f')):
+
+                                # Backtrack to find the beginning of the expression
+                                for i_char_back in range(len(definitions)-1, -1, -1):
+                                    if definitions[i_char_back] == ' ':
+                                        definitions = definitions[:i_char_back+1] + '§' + definitions[i_char_back+1:]
+                                        break
+                                    elif definitions[i_char_back] == ',':
+                                        definitions = definitions[:i_char_back+1] + ' §' + definitions[i_char_back+1:]
+                                        break
+
+                                mode = 1
+                        else:
+                            if raw_definitions[i_char] == '[' or raw_definitions[i_char] == ' ' or raw_definitions[i_char] == ',':
+                                mode = 0
+                                definitions += "§"
+
+                        definitions += raw_definitions[i_char]
                     
                     if not headwords: raise Exception("No headwords found in line {}".format(i_line+1))
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
@@ -130,7 +157,7 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
                 if len(definitions.split('/')) == 1:
 
                     # Get the entry this entry is derived from
-                    origin_headwords = definitions.split('erhua variant of ')[1].split('[')[0].split('|')
+                    origin_headwords = definitions.split('erhua variant of ')[1].split('§')[1].split('|')
 
                     if len(origin_headwords) == 1:
                         origin = c.execute("SELECT * FROM entries WHERE simplified = (?) AND traditional = (?)", (origin_headwords[0], origin_headwords[0])).fetchall()
@@ -218,8 +245,6 @@ def pinyin_marks_to_numbers(syllable):
 
     output.append(str(tone))
     output = ''.join(output).strip()
-
-    print("Converted {} to {}".format(syllable, output))
 
     return output
 
