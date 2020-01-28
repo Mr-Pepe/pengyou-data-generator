@@ -96,6 +96,9 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
 
                         definitions += raw_definitions[i_char]
                     
+                    if mode == 1:
+                        definitions += '§'
+                    
                     if not headwords: raise Exception("No headwords found in line {}".format(i_line+1))
                     if not pinyin: raise Exception("No Pinyin in line {}".format(i_line+1))
                     if not definitions: raise Exception("No definitions in line {}".format(i_line+1))
