@@ -90,7 +90,7 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
 
                                 mode = 1
                         else:
-                            if raw_definitions[i_char] == '[' or raw_definitions[i_char] == ' ' or raw_definitions[i_char] == ',':
+                            if raw_definitions[i_char] in ['[', ' ', ',', '/']:
                                 mode = 0
                                 definitions += "§"
 
