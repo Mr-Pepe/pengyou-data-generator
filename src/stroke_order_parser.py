@@ -45,7 +45,7 @@ def parse_stroke_order(textfile_path, database_path):
 
 
 if __name__ == "__main__":
-    stroke_order_raw_file_path = "./data/stroke_order.json"
-    database_path = "./output/data.db"
+    stroke_order_raw_file_path = "../data/stroke_order.json"
+    database_path = "../output/data.db"
 
     parse_stroke_order(stroke_order_raw_file_path, database_path)

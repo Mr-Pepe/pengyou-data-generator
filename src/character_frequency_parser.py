@@ -64,7 +64,7 @@ def parse_character_frequency(frequency_file_path, database_path):
 
 
 if __name__ == "__main__":
-    frequency_file_path = "./data/character_frequency.html"
-    database_path = "./output/data.db"
+    frequency_file_path = "../data/character_frequency.html"
+    database_path = "../output/data.db"
 
     parse_character_frequency(frequency_file_path, database_path)

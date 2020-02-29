@@ -472,7 +472,7 @@ def parse_hsk(base_path, database_path):
 
 
 if __name__ == "__main__":
-    base_path = "./data/HSK/HSK{}.txt"
-    database_path = "./output/data.db"
+    base_path = "../data/HSK/HSK{}.txt"
+    database_path = "../output/data.db"
 
     parse_hsk(base_path, database_path)

@@ -118,6 +118,26 @@ def parse_dictionary(cedict_path, unihan_path, database_path):
                     if len(definitions.split('/')) == 1 and "archaic variant of" in definitions:
                         continue
 
+                    iLongDefinition = 0
+                    longDefinitions = []
+                    tmpDefinitions = []
+
+                    for iDefinition, definition in enumerate(definitions.split('/')):
+
+                        #  If the definition is longer than 30 characters or if the definition before this was
+                        #  long and this one is a measure word, add them later to the end of the definitions,
+                        #  so that more definitions are visible from the search result list
+                        if len(definition) > 30 or (iDefinition == iLongDefinition+1 and "measure word" in definition):
+                            longDefinitions.append(definition)
+                            iLongDefinition = iDefinition
+                        else:
+                            tmpDefinitions.append(definition)
+
+                    for definition in longDefinitions:
+                        tmpDefinitions.append(definition)
+
+                    definitions = '/'.join(tmpDefinitions)
+
                     c.execute("""INSERT INTO entries (simplified, traditional, pinyin, priority, word_length, definitions, hsk, pinyin_length) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                                 (headwords[1], headwords[0], pinyin, 0, len(headwords[0]), definitions, 7, len(pinyin)))
@@ -252,8 +272,8 @@ def pinyin_marks_to_numbers(syllable):
     return output
 
 if __name__ == "__main__":
-    cedict_raw_file_path = "./data/cedict.txt"
-    database_path = "./output/data.db"
-    unihan_path = "./data/unihan.txt"
+    cedict_raw_file_path = "../data/cedict.txt"
+    database_path = "../output/data.db"
+    unihan_path = "../data/unihan.txt"
     
     parse_dictionary(cedict_raw_file_path, unihan_path, database_path)

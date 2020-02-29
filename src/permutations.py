@@ -104,6 +104,6 @@ def create_permutations(hanzi, syllables):
 
 
 if __name__ == "__main__":
-    database_path = "./output/data.db"
+    database_path = "../output/data.db"
 
     generate_permutations(database_path, 3)

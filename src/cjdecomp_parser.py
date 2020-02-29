@@ -48,7 +48,7 @@ def parse_decompositions(decomposition_file_path, database_path):
     
 
 if __name__ == "__main__":
-    cjdecomp_raw_file_path = "./data/cjdecomp.txt"
-    database_path = "./output/data.db"
+    cjdecomp_raw_file_path = "../data/cjdecomp.txt"
+    database_path = "../output/data.db"
 
     parse_decompositions(cjdecomp_raw_file_path, database_path)
