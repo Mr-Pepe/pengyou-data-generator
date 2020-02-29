@@ -7,3 +7,4 @@ output/**
 *.directory
 
 !*.gitkeep
+.idea/
