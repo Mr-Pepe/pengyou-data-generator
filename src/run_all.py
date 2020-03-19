@@ -12,7 +12,8 @@ cjdecomp_raw_file_path = "../data/cjdecomp.txt"
 stroke_order_raw_file_path = "../data/stroke_order.json"
 hsk_lists_base_path = "../data/HSK/HSK{}.txt"
 frequency_file_path = "../data/character_frequency.html"
-opencc_file_path = "../data/opencc.txt"
+opencc_tradsimpl_characters_file_path = "../data/opencc_tradsimpl_characters.txt"
+opencc_tradsimpl_phrases_file_path = "../data/opencc_tradsimpl_phrases.txt"
 database_path = "../output/data.db"
 
 parse_dictionary(cedict_raw_file_path, unihan_raw_file_path, database_path)
@@ -27,4 +28,4 @@ parse_decompositions(cjdecomp_raw_file_path, database_path)
 
 parse_stroke_order(stroke_order_raw_file_path, database_path)
 
-parse_opencc(opencc_file_path, database_path)
+parse_opencc(opencc_tradsimpl_characters_file_path, opencc_tradsimpl_phrases_file_path, database_path)
