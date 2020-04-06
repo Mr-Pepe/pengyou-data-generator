@@ -1,5 +1,7 @@
 This repository handles the parsing of several data sources and merges them together in one SQLite3 database to be used be the [pengyou app](https://github.com/Mr-Pepe/pengyou).
 
+In order to build the database using all resources, run the run_all.py file. 
+
 Sources are obtained from the following links:
 
 #### [CC-CEDICT Open Source Dictionary](https://www.mdbg.net/chinese/dictionary?page=cc-cedict)
