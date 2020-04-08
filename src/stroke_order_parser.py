@@ -28,9 +28,15 @@ def parse_stroke_order(textfile_path, database_path):
                         );''')
 
             for character in data:
+                # Manual hack :\ TODO: Check if fixed upstream
+                if character == '說':
+                    new_character = '説'
+                else:
+                    new_character = character
+
                 c.execute("""INSERT INTO stroke_orders (character, json) 
                                 VALUES (?, ?)""",
-                                (character, str(data[character])))
+                                (new_character, str(data[character])))
 
             conn.commit()
             conn.close()
